@@ -23,7 +23,6 @@ async def on_ready():
         print(f"Finding specific DM channel with recipient '{recipient_name}'...")
         dm_channel = list(c for c in dm_channels if c.recipient.name == recipient_name)[0]
         # Acquire message history from after specified date
-        after_date = datetime.datetime(2017, 9, 1)
         print(f"Deleting messages in history after {after_date}...")
         async for msg in dm_channel.history(limit=None, after=after_date):
             # If the message was written by me and is not a system message
