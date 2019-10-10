@@ -5,6 +5,9 @@ from pathlib import Path
 import discord
 
 
+recipient_name = input("Target (username): ")
+after_date = datetime.datetime(2017, 9, 1)
+
 client = discord.Client()
 
 
@@ -17,11 +20,10 @@ async def on_ready():
         print("Acquiring DM channels...")
         dm_channels = (c for c in client.private_channels if isinstance(c, discord.DMChannel))
         # Get specific DM channel by recipient name
-        recipient_name = "skullyi1234"
         print(f"Finding specific DM channel with recipient '{recipient_name}'...")
         dm_channel = list(c for c in dm_channels if c.recipient.name == recipient_name)[0]
         # Acquire message history from after specified date
-        after_date = datetime.datetime(2017, 11, 10)
+        after_date = datetime.datetime(2017, 9, 1)
         print(f"Deleting messages in history after {after_date}...")
         async for msg in dm_channel.history(limit=None, after=after_date):
             # If the message was written by me and is not a system message
