@@ -1,7 +1,7 @@
 """discordpurge
 
 Usage:
-    discordpurge.py <target> <after_date>
+    discordpurge.py <target> <after>
 """
 import datetime
 import sys
@@ -9,6 +9,9 @@ from pathlib import Path
 
 import discord
 from docopt import docopt
+from dateutil.parser import parse as dt_parse
+from dateutil.parser._parser import ParserError
+from dateutil.tz import tzutc, tzlocal
 
 
 client = discord.Client()
@@ -30,8 +33,8 @@ async def on_ready():
         except IndexError:
             raise Exception(f"No recipient '{name}#{number}' found in DMs")
         # Acquire message history from after specified date
-        print(f"Deleting messages sent after {after_date}...")
-        async for msg in dm_channel.history(limit=None, after=after_date):
+        print(f"Deleting messages sent after {after_dt}...")
+        async for msg in dm_channel.history(limit=None, after=after_dt):
             # If the message was written by me and is not a system message
             if msg.author == client.user and msg.type == discord.MessageType.default:
                 counter += 1
@@ -65,12 +68,18 @@ if __name__ == '__main__':
         print("Error: target must be supplied as 'name#number'")
         sys.exit(1)
 
-    # Parse the after_date argument into a datetime object
+    # Parse the after argument into a datetime object with dateutil and convert to UTC
+    after_dts = args["<after>"]
     try:
-        after_date = datetime.datetime.strptime(args["<after_date>"], "%Y-%m-%d")
-    except ValueError:
-        print("Error: date required in yyyy-mm-dd (e.g. 2017-09-01) format")
+        after_dt = dt_parse(after_dts)
+    except ParserError:
+        print(f"Error: could not parse <after> datetime '{after_dts}'")
         sys.exit(1)
+    # If after_dt doesn't contain timezone info, assume user local timezone
+    if not after_dt.tzinfo:
+        after_dt = after_dt.replace(tzinfo=tzlocal())
+    # Convert the after_dt from local time to UTC time (and make naive again to meet discord.py requirement)
+    after_dt = after_dt.astimezone(tzutc()).replace(tzinfo=None)
 
     try:
         client.run(token, bot=False)
