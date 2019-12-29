@@ -3,6 +3,7 @@
 Usage:
     discordpurge.py <target> <after>
 """
+import asyncio
 import datetime
 import sys
 from pathlib import Path
@@ -33,7 +34,7 @@ async def on_ready():
         except IndexError:
             raise Exception(f"No recipient '{name}#{number}' found in DMs")
         # Acquire message history from after specified date
-        print(f"Deleting messages sent after {after_dt}...")
+        print(f"Deleting messages sent after {after_dt} UTC...")
         async for msg in dm_channel.history(limit=None, after=after_dt):
             # If the message was written by me and is not a system message
             if msg.author == client.user and msg.type == discord.MessageType.default:
@@ -41,6 +42,8 @@ async def on_ready():
                 print("*", end="", flush=True)
                 await msg.delete()
         print(f"\n{counter} messages deleted.")
+    except asyncio.CancelledError:
+        print(f"\nPurge cancelled after {counter} messages deleted.")
     except Exception as e:
         print(f"Error: {str(e)}")
     finally:
@@ -81,7 +84,4 @@ if __name__ == '__main__':
     # Convert the after_dt from local time to UTC time (and make naive again to meet discord.py requirement)
     after_dt = after_dt.astimezone(tzutc()).replace(tzinfo=None)
 
-    try:
-        client.run(token, bot=False)
-    except KeyboardInterrupt:
-        print("Program quit by interrupt")
+    client.run(token, bot=False)
