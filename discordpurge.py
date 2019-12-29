@@ -23,8 +23,12 @@ async def on_ready():
         print("Acquiring DM channels...")
         dm_channels = (c for c in client.private_channels if isinstance(c, discord.DMChannel))
         # Get specific DM channel by recipient name#number
-        print(f"Finding specific DM channel with recipient '{name}#{number}'...")
-        dm_channel = list(c for c in dm_channels if c.recipient.name == name and c.recipient.discriminator == number)[0]
+        print(f"Identifying DM channel with recipient '{name}#{number}'...")
+        try:
+            dm_channel = list(c for c in dm_channels
+                              if c.recipient.name == name and c.recipient.discriminator == number)[0]
+        except IndexError:
+            raise Exception(f"No recipient '{name}#{number}' found in DMs")
         # Acquire message history from after specified date
         print(f"Deleting messages sent after {after_date}...")
         async for msg in dm_channel.history(limit=None, after=after_date):
