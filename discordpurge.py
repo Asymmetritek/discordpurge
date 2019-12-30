@@ -84,4 +84,7 @@ if __name__ == '__main__':
     # Convert the after_dt from local time to UTC time (and make naive again to meet discord.py requirement)
     after_dt = after_dt.astimezone(tzutc()).replace(tzinfo=None)
 
-    client.run(token, bot=False)
+    try:
+        client.run(token, bot=False)
+    except discord.errors.LoginFailure:
+        print(f"Login failure: improper token in '{token_fp.resolve()}'")
