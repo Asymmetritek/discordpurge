@@ -1,7 +1,10 @@
 """discordpurge
 
 Usage:
-    discordpurge.py <target> <after>
+    discordpurge.py [-q | --quiet] [--after=<utc_datetime>] [--before=<utc_datetime>] <target>
+
+Options:
+    -q --quiet  Disable interactive confirmation check
 """
 import asyncio
 import datetime
@@ -12,7 +15,6 @@ import discord
 from docopt import docopt
 from dateutil.parser import parse as dt_parse
 from dateutil.parser._parser import ParserError
-from dateutil.tz import tzutc, tzlocal
 
 
 client = discord.Client()
@@ -34,8 +36,8 @@ async def on_ready():
         except IndexError:
             raise Exception(f"No recipient '{name}#{number}' found in DMs")
         # Acquire message history from after specified date
-        print(f"Deleting messages sent after {after_dt} UTC...")
-        async for msg in dm_channel.history(limit=None, after=after_dt):
+        print(f"Deleting messages sent between '{after_dt} UTC' and '{before_dt} UTC'...")
+        async for msg in dm_channel.history(limit=None, after=after_dt, before=before_dt):
             # If the message was written by me and is not a system message
             if msg.author == client.user and msg.type == discord.MessageType.default:
                 counter += 1
@@ -52,6 +54,7 @@ async def on_ready():
 
 if __name__ == '__main__':
     args = docopt(__doc__)
+    quiet = True if args["--quiet"] else False
 
     # Load the authentication token from auth_token.txt
     token_fp = Path(__file__).parent / Path("auth_token.txt")
@@ -71,18 +74,35 @@ if __name__ == '__main__':
         print("Error: target must be supplied as 'name#number'")
         sys.exit(1)
 
-    # Parse the after argument into a datetime object with dateutil and convert to UTC
-    after_dts = args["<after>"]
-    try:
-        after_dt = dt_parse(after_dts)
-    except ParserError:
-        print(f"Error: could not parse <after> datetime '{after_dts}'")
-        sys.exit(1)
-    # If after_dt doesn't contain timezone info, assume user local timezone
-    if not after_dt.tzinfo:
-        after_dt = after_dt.replace(tzinfo=tzlocal())
-    # Convert the after_dt from local time to UTC time (and make naive again to meet discord.py requirement)
-    after_dt = after_dt.astimezone(tzutc()).replace(tzinfo=None)
+    # Parse the after argument, if provided, into a datetime object with dateutil
+    after_dts = args["--after"]
+    if after_dts:
+        try:
+            after_dt = dt_parse(after_dts, ignoretz=True)
+        except ParserError:
+            print(f"Error: could not parse 'after' datetime '{after_dts}'")
+            sys.exit(1)
+    else:
+        # If no after argument provided, purge from Discord initial release date
+        after_dt = datetime.datetime(2015, 5, 13)
+
+    # Parse the before argument, if provided, into a datetime object with dateutil
+    before_dts = args["--before"]
+    if before_dts:
+        try:
+            before_dt = dt_parse(before_dts, ignoretz=True)
+        except ParserError:
+            print(f"Error: could not parse 'before' datetime '{before_dts}'")
+            sys.exit(1)
+    else:
+        # If no before argument provided, purge up to present second
+        before_dt = datetime.datetime.utcnow().replace(microsecond=0)
+
+    if not quiet:
+        i = input(f"Confirm (Y) purge against '{name}#{number}' between '{after_dt} UTC' and '{before_dt} UTC': ")
+        if i not in ["y", "Y"]:
+            print("Purge rejected.")
+            sys.exit(1)
 
     try:
         client.run(token, bot=False)
