@@ -12,9 +12,8 @@ import sys
 from pathlib import Path
 
 import discord
+import dateutil.parser as du_parser
 from docopt import docopt
-from dateutil.parser import parse as dt_parse
-from dateutil.parser._parser import ParserError
 
 
 client = discord.Client()
@@ -52,6 +51,14 @@ async def on_ready():
         await client.close()
 
 
+def _dt_parse(dts):
+    try:
+        return du_parser.parse(dts, ignoretz=True)
+    except du_parser._parser.ParserError:
+        print(f"Error: could not parse datetime '{dts}'")
+        sys.exit(1)
+
+
 if __name__ == '__main__':
     args = docopt(__doc__)
     quiet = True if args["--quiet"] else False
@@ -74,29 +81,10 @@ if __name__ == '__main__':
         print("Error: target must be supplied as 'name#number'")
         sys.exit(1)
 
-    # Parse the after argument, if provided, into a datetime object with dateutil
-    after_dts = args["--after"]
-    if after_dts:
-        try:
-            after_dt = dt_parse(after_dts, ignoretz=True)
-        except ParserError:
-            print(f"Error: could not parse 'after' datetime '{after_dts}'")
-            sys.exit(1)
-    else:
-        # If no after argument provided, purge from Discord initial release date
-        after_dt = datetime.datetime(2015, 5, 13)
-
-    # Parse the before argument, if provided, into a datetime object with dateutil
-    before_dts = args["--before"]
-    if before_dts:
-        try:
-            before_dt = dt_parse(before_dts, ignoretz=True)
-        except ParserError:
-            print(f"Error: could not parse 'before' datetime '{before_dts}'")
-            sys.exit(1)
-    else:
-        # If no before argument provided, purge up to present second
-        before_dt = datetime.datetime.utcnow().replace(microsecond=0)
+    # Parse the optional before and after arguments if provided else use default
+    # after (discord release date) and/or before (now)
+    after_dt = _dt_parse(args["--after"]) if args["--after"] else datetime.datetime(2015, 5, 13)
+    before_dt = _dt_parse(args["--before"]) if args["--before"] else datetime.datetime.utcnow().replace(microsecond=0)
 
     if not quiet:
         i = input(f"Confirm (Y) purge against '{name}#{number}' between '{after_dt} UTC' and '{before_dt} UTC': ")
