@@ -54,7 +54,7 @@ The decision to load the token from a file rather than have it passed as a comma
 5. Find the `authorization` header under `Request Headers`
 6. Copy and paste the value for the `authorization` header into `auth_token.txt` (creating it if it doesn't exist in the same directory as `discordpurge.py`)
 
-##### Notes:
+#### Notes:
 * *Do not share your token with anyone who you wouldn't be willing to give full access to your Discord account.*
 * *Be very wary to keep your authorization token secret - discordpurge makes no attempt whatsoever to protect this token whilst it is in `auth_token.txt`*:
   * *It would be inadvisable to use this tool from a directory that is accessible by other users*
