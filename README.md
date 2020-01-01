@@ -55,7 +55,7 @@ Options:
 The decision to load the token from a file rather than have it passed as a command-line parameter or request it interactively was made for both ease-of-use (not having to copy-paste the token every time the tool is run) and to prevent the sensitive token being left in the command history.
 
 #### Methodology:
-1. Open Discord (either the desktop application or web applicaton in Chrome)
+1. Open Discord (either the desktop application or web application in Chrome)
 2. Use `CTRL + SHIFT + I` to open Developer Tools
 3. Select the `Network` tab and search for `/api`. Reload (with `F5`) if necessary to capture the network requests.
 4. Select any of the requests under Name and select `Headers`
